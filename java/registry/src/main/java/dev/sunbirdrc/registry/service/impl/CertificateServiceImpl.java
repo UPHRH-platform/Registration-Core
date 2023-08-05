@@ -1,10 +1,19 @@
 package dev.sunbirdrc.registry.service.impl;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.TextNode;
 import dev.sunbirdrc.pojos.ComponentHealthInfo;
+import dev.sunbirdrc.registry.dao.Learner;
 import dev.sunbirdrc.registry.middleware.util.Constants;
+import dev.sunbirdrc.registry.model.dto.BarCode;
+import dev.sunbirdrc.registry.model.dto.MailDto;
 import dev.sunbirdrc.registry.service.ICertificateService;
+import dev.sunbirdrc.registry.util.ClaimRequestClient;
 import org.jetbrains.annotations.NotNull;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -31,6 +40,8 @@ public class CertificateServiceImpl implements ICertificateService {
     private final String certificateHealthCheckURL;
     private final RestTemplate restTemplate;
 
+    private final ClaimRequestClient claimRequestClient;
+
     private boolean signatureEnabled;
     private static Logger logger = LoggerFactory.getLogger(CertificateServiceImpl.class);
 
@@ -38,25 +49,29 @@ public class CertificateServiceImpl implements ICertificateService {
                                   @Value("${certificate.apiUrl}") String certificateUrl,
                                   @Value("${signature.enabled}") boolean signatureEnabled,
                                   @Value("${certificate.healthCheckURL}") String certificateHealthCheckURL,
-                                  RestTemplate restTemplate) {
+                                  RestTemplate restTemplate,ClaimRequestClient claimRequestClient) {
         this.templateBaseUrl = templateBaseUrl;
         this.certificateUrl = certificateUrl;
         this.restTemplate = restTemplate;
         this.certificateHealthCheckURL = certificateHealthCheckURL;
         this.signatureEnabled = signatureEnabled;
+        this.claimRequestClient = claimRequestClient;
     }
 
     @Override
-    public Object getCertificate(JsonNode certificateData, String entityName, String entityId, String mediaType, String templateUrl, JsonNode entity) {
+    public Object getCertificate(JsonNode certificateData, String entityName, String entityId, String mediaType, String templateUrl, JsonNode entity, String fileName) {
         try {
             String finalTemplateUrl = inferTemplateUrl(entityName, mediaType, templateUrl);
+            logger.info("Org LOGO"+String.valueOf(entity.get("orgLogo")));
 
             Map<String, Object> requestBody = new HashMap<String, Object>(){{
                 put("templateUrl", finalTemplateUrl);
-                put("certificate", certificateData.toString());
+                String value = certificateData.toString();
+                put("certificate", value);
                 put("entityId", entityId);
                 put("entityName", entityName);
                 put("entity", entity);
+                put("credentialsFileName",fileName);
             }};
             HttpHeaders headers = new HttpHeaders();
             headers.set("Accept", mediaType);
@@ -66,6 +81,64 @@ public class CertificateServiceImpl implements ICertificateService {
             logger.error("Get certificate failed", e);
         }
         return null;
+    }
+
+
+    public void shareCertificateMail(MailDto mail) {
+        try {
+            logger.info("Sharing Certificate start");
+            claimRequestClient.sendMail(mail);
+            logger.info("Sharing Certificate end");
+        } catch (Exception e) {
+            logger.error("Get certificate failed", e);
+        }
+
+    }
+
+    public void trackCredentials(Learner learner) {
+        try {
+            logger.info("Track Certificate start");
+            claimRequestClient.saveCredentials(learner);
+            logger.info("Track Certificate end");
+        } catch (Exception e) {
+            logger.error("Track certificate failed", e);
+        }
+
+    }
+
+    public byte[]  getCred(String fileName) {
+        byte[] bytes = null;
+        try {
+            logger.info("Track Certificate start");
+            bytes = claimRequestClient.getCredentials(fileName);
+            logger.info("Track Certificate end");
+        } catch (Exception e) {
+            logger.error("Track certificate failed", e);
+        }
+
+        return bytes;
+
+    }
+
+    public String saveToGCS(Object certificate, String entityId) {
+        String url = null;
+        logger.info("Uploading File GCP.");
+        url = claimRequestClient.saveFileToGCS(certificate, entityId);
+        logger.info("Uploading File GCP complete");
+        return url;
+    }
+
+    public BarCode getBarCode(BarCode barCode) {
+        BarCode node = null;
+        try {
+            logger.debug("BarCode start");
+            node = claimRequestClient.getBarCode(barCode);
+            logger.debug("BarCode end");
+            return node;
+        } catch (Exception e) {
+            logger.error("Get BarCode failed", e);
+        }
+        return node;
     }
 
     @NotNull

@@ -97,6 +97,15 @@ function formatDate(givenDate) {
     return `${padDigit(day)}-${monthName}-${year}`;
 }
 
+
+async function getCandidateLogo(url) {
+    console.log("Start buffer");
+    const response = await axios.get(url,  { responseType: 'arraybuffer' });
+    const buffer = Buffer.from(response.data, "utf-8");
+    //console.log(buffer);
+    return buffer;
+}
+
 function month(givenDateTime){
     const dob = new Date(givenDateTime);
     let monthName = monthNames[dob.getMonth()];
@@ -156,11 +165,12 @@ async function generateRawCertificate(certificate, templateUrl, entityId, entity
     let certificateRaw = certificate;
     // TODO: based on type template will be picked
     const certificateTemplateUrl = templateUrl;
-    const qrCodeType = config.QR_TYPE || '';
+    const qrCodeType = URL;
     let qrData;
-    console.log('QR Code type: ', qrCodeType);
+    //console.log('QR Code type: ', qrCodeType);
     if (qrCodeType.toUpperCase() === URL) {
-        qrData = `${config.CERTIFICATE_DOMAIN_URL}/certs/${entityId}?t=${qrCodeType}&entity=${entityName}${process.env.ADDITIONAL_QUERY_PARAMS || ""}`;
+        //qrData = `${envData.certDomainUrl}/certs/${entityId}?t=${qrCodeType}&entity=${entityName}${process.env.ADDITIONAL_QUERY_PARAMS || ""}`;
+        qrData = `${envData.certDomainUrl}/api/v1//files/download?'fileName'=/${credentialsFileName}+.PDF}`;
     } else {
         const zip = new JSZip();
         zip.file("certificate.json", certificateRaw, {
@@ -173,13 +183,13 @@ async function generateRawCertificate(certificate, templateUrl, entityId, entity
             });
         qrData = zippedData
         if (zipType) {
-            console.log('ZippedData length', String(zippedData).length);
-            qrData = `${config.CERTIFICATE_DOMAIN_URL}/certs/${entityId}?t=${config.QR_TYPE}&data=${zippedData}&entity=${entityName}${process.env.ADDITIONAL_QUERY_PARAMS || ""}`;
+            //console.log('ZippedData length', String(zippedData).length);
+            qrData = `${envData.certDomainUrl}/certs/${entityId}?t=${envData.qrType}&data=${zippedData}&entity=${entityName}${process.env.ADDITIONAL_QUERY_PARAMS || ""}`;
         }
     }
 
-    // const dataURL = await QRCode.toDataURL(qrData, {scale: 3});
-    const dataURL = await getQRCodeImage(qrData);
+    const dataURL = await QRCode.toDataURL(qrData, {scale: 3});;
+    
     const certificateData = {
         ...prepareDataForCertificateWithQRCode(certificateRaw, dataURL),
         entity
@@ -187,8 +197,9 @@ async function generateRawCertificate(certificate, templateUrl, entityId, entity
     return await renderDataToTemplate(certificateTemplateUrl, certificateData);
 }
 
-async function createCertificatePDF(certificate, templateUrl, res, entityId, entityName, entity) {
-    let rawCertificate = await generateRawCertificate(certificate, templateUrl, entityId, entityName, entity);
+async function createCertificatePDF(certificate, templateUrl, res, entityId, entityName, entity, credentialsFileName) {
+    let rawCertificate = await generateRawCertificate(certificate, templateUrl, entityId, entityName, entity,credentialsFileName);
+    rawCertificate = rawCertificate.replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&#x3D;/g,'=');
     const pdfBuffer = await createPDF(rawCertificate);
     res.statusCode = 200;
     return pdfBuffer;
@@ -208,12 +219,15 @@ async function getCertificatePDF(req, res) {
         if (!reqBody || isEmpty(reqBody)) {
             return sendResponse(res, 400, "Bad request");
         }
-        console.log('Got this req', reqBody);
-        let {certificate, templateUrl, entityId, entityName, entity} = reqBody;
+        //console.log('Got this req', reqBody);
+        let {certificate, templateUrl, entityId, entityName, entity, credentialsFileName} = reqBody;
+        console.log("FileName:"+ credentialsFileName);
         if (certificate === "" || templateUrl === "") {
             return sendResponse(res, 400, "Required parameters missing");
         }
-        res = await createCertificatePDF(certificate, templateUrl, res, entityId, entityName, entity);
+        
+        res = await createCertificatePDF(certificate, templateUrl, res, entityId, entityName, entity,credentialsFileName);
+        
         return res
     } catch (err) {
         console.error(err);
@@ -227,12 +241,13 @@ async function getCertificate(req, res) {
         if (!reqBody || isEmpty(reqBody)) {
             return sendResponse(res, 400, "Bad request");
         }
-        console.log('Got this req', reqBody);
-        let {certificate, templateUrl, entityId, entityName, entity} = reqBody;
+        //console.log('Got this req', reqBody);
+        let {certificate, templateUrl, entityId, entityName, entity,credentialsFileName} = reqBody;
         if (certificate === "" || templateUrl === "") {
             return sendResponse(res, 400, "Required parameters missing");
         }
-        res = await generateRawCertificate(certificate, templateUrl, entityId, entityName, entity);
+        res = await generateRawCertificate(certificate, templateUrl, entityId, entityName, entity,credentialsFileName);
+        res = res.replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&#x3D;/g,'=');
         return res
     } catch (err) {
         console.error(err);
@@ -287,13 +302,18 @@ async function createPDF(certificate) {
         }
         const page = await browser.newPage();
         await page.evaluateHandle('document.fonts.ready');
-        await page.setContent(certificate, {
-            waitUntil: 'domcontentloaded'
+        await page.setContent(certificate);
+        const jsHandle = await page.evaluateHandle(() => {
+            const elements = document.getElementsByTagName('h6');
+            console.log(elements);
+            return elements;
+          });
+
+        const pdfBuffer = await page.pdf({
+            format: 'A4',
+            printBackground: true,
+            displayHeaderFooter: true
         });
-        // console.log(certificate);
-        // await page.goto('data:text/html,' + certificate, {waitUntil: 'networkidle2'});
-        await page.evaluateHandle('document.fonts.ready');
-        const pdfBuffer = await page.pdf(pdfConfig);
 
 
         // close the browser

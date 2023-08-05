@@ -55,16 +55,19 @@ registry:
   system:
     base: ${registry_system_base:http://localhost:8081/sunbirdrc/}
   rootEntity:
-    type: ${registry_rootentity_type:Teacher}
+    type: ${registry_rootentity_type:Regulator}
   schema:
     url: ${registry_schema_url:http://localhost:8081/_schemas/}
   attestationPolicy:
-    createAccess: ${create_attestation_access_entities:User}
+    createAccess: ${create_attestation_access_entities:Regulator}
   manager:
     type: ${manager_type:DefinitionsManager}
   redis:
     host: ${redis_host:localhost}
     port: ${redis_port:6379}
+  LOGO:
+    url: ${imgBaseUri:https://casa.upsmfac.org/UploadedFiles/Student/}
+    format : ${imgFormat:.jpg}
 
 workflow:
   enabled: ${workflow.enable:true}
@@ -157,6 +160,7 @@ database:
       uri: ${connectionInfo_uri:jdbc:postgresql://localhost:5432/registry}
 
       username: ${connectionInfo_username:postgres}
+      #password: ${connectionInfo_password:yoursupersecret}
       password: ${connectionInfo_password:postgres}
       maxPoolSize: ${connectionInfo_maxPoolSize:200}
 

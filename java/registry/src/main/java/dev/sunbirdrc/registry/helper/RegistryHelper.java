@@ -240,7 +240,7 @@ public class RegistryHelper {
             Shard shard = shardManager.getShard(inputJson.get(entityType).get(shardManager.getShardProperty()));
             watch.start("RegistryController.addToExistingEntity");
             String resultId;
-            if (asyncRequest.isEnabled()) {
+            if (asyncRequest != null && asyncRequest.isEnabled()) {
                 resultId = registryAsyncService.addEntity(shard, userId, inputJson, skipSignature);
                 recordId = new RecordIdentifier(null, resultId);
             } else {
@@ -248,7 +248,10 @@ public class RegistryHelper {
                 recordId = new RecordIdentifier(shard.getShardLabel(), resultId);
             }
             watch.stop("RegistryController.addToExistingEntity");
-            logger.info("AddEntity,{}", recordId.toString());
+            if(recordId!=null)
+                  logger.info("AddEntity,{}", recordId.toString());
+            else
+                logger.info("AddEntity null");
         } catch (Exception e) {
             logger.error("Exception in controller while adding entity !", e);
             throw new Exception(e);
@@ -762,6 +765,14 @@ public class RegistryHelper {
         throw new Exception(NOT_PART_OF_THE_SYSTEM_EXCEPTION);
     }
 
+    public JsonNode getRequestedUserDetails1(HttpServletRequest request, String entityName, String filter) throws Exception {
+        if (isInternalRegistry(entityName)) {
+            return getUserInfoFromRegistry1(request, entityName, filter);
+        } else if (entityTypeHandler.isExternalRegistry(entityName)) {
+            return getUserInfoFromKeyCloak(request, entityName);
+        }
+        throw new Exception(NOT_PART_OF_THE_SYSTEM_EXCEPTION);
+    }
     private boolean isInternalRegistry(String entityName) {
         return definitionsManager.getAllKnownDefinitions().contains(entityName);
     }
@@ -799,8 +810,94 @@ public class RegistryHelper {
         payload.set(FILTERS, filters);
         return payload;
     }
+	    public JsonNode getUserInfoFromRegistry1(HttpServletRequest request, String entityName, String filterString) throws Exception {
+        String userId = getUserId(request,entityName);
+
+        if (userId != null) {
+            ObjectNode payload = JsonNodeFactory.instance.objectNode();
+            payload.set(ENTITY_TYPE, JsonNodeFactory.instance.arrayNode().add(entityName));
+            ObjectNode filters = JsonNodeFactory.instance.objectNode();
+            if(filterString!=null) {
+                ObjectNode customFilter = (ObjectNode) new ObjectMapper().readTree(filterString);
+                if(customFilter!=null){
+                    Iterator<String> fieldNames = customFilter.fieldNames();
+                    while (fieldNames.hasNext()) {
+                        String key = fieldNames.next();
+                        String value = String.valueOf(customFilter.get(key));
+                        JsonNode contains = JsonNodeFactory.instance.objectNode().put("contains", value);
+                        filters.set(key, contains);
+                    }
+                }
+            }
+            ObjectNode contains = JsonNodeFactory.instance.objectNode().put("contains", userId);
+            filters.set(OSSystemFields.osOwner.toString(), contains);
+
+            //payload.set(FILTERS, filters.get("filters"));
+            payload.set(FILTERS, filters);
+            watch.start("RegistryController.searchEntity");
+            JsonNode result = searchEntity(payload);
+            watch.stop("RegistryController.searchEntity");
+            return result;
+        }
+        throw new Exception("Forbidden");
+    }
+	
+	    public JsonNode getUserInfoFromRegistryByOsId(HttpServletRequest request, String entityName, String osid) throws Exception {
+        String userId = getUserId(request,entityName);
+        if (userId != null) {
+            ObjectNode payload = JsonNodeFactory.instance.objectNode();
+            payload.set(ENTITY_TYPE, JsonNodeFactory.instance.arrayNode().add(entityName));
+            ObjectNode filters = JsonNodeFactory.instance.objectNode();
+            if(osid != null) {
+                JsonNode contains = JsonNodeFactory.instance.objectNode().put("contains", osid);
+                filters.set("osid", contains);
+            }
+            ObjectNode contains = JsonNodeFactory.instance.objectNode().put("contains", userId);
+            filters.set(OSSystemFields.osOwner.toString(), contains);
+
+            //payload.set(FILTERS, filters.get("filters"));
+            payload.set(FILTERS, filters);
+            watch.start("RegistryController.searchEntity");
+            JsonNode result = searchEntity(payload);
+            watch.stop("RegistryController.searchEntity");
+            return result;
+        }
+        throw new Exception("Forbidden");
+    }
+
+    public JsonNode getUserFromRegistry(String filterString, String entityName, String userId) throws Exception {
+
+        if (userId != null) {
+            ObjectNode payload = JsonNodeFactory.instance.objectNode();
+            payload.set(ENTITY_TYPE, JsonNodeFactory.instance.arrayNode().add(entityName));
+            ObjectNode filters = JsonNodeFactory.instance.objectNode();
+            if(filterString!=null) {
+                ObjectNode customFilter = (ObjectNode) new ObjectMapper().readTree(filterString);
+                if(customFilter!=null){
+                    Iterator<String> fieldNames = customFilter.fieldNames();
+                    while (fieldNames.hasNext()) {
+                        String key = fieldNames.next();
+                        String value = String.valueOf(customFilter.get(key));
+                        JsonNode contains = JsonNodeFactory.instance.objectNode().put("contains", value);
+                        filters.set(key, contains);
+                    }
+                }
+            }
+            ObjectNode contains = JsonNodeFactory.instance.objectNode().put("contains", userId);
+            filters.set(OSSystemFields.osOwner.toString(), contains);
+
+            //payload.set(FILTERS, filters.get("filters"));
+            payload.set(FILTERS, filters);
+            watch.start("RegistryController.searchEntity");
+            JsonNode result = searchEntity(payload);
+            watch.stop("RegistryController.searchEntity");
+            return result;
+        }
+        throw new Exception("Forbidden");
+    }
 
     public String authorize(String entityName, String entityId, HttpServletRequest request) throws Exception {
+        logger.info("Entity Name"+entityName);
         String userIdFromRequest = getUserId(request, entityName);
         if (getManageRoles(entityName).size() > 0) {
             try {
@@ -905,6 +1002,11 @@ public class RegistryHelper {
                 return ROLE_ANONYMOUS;
             }
             Set<String> userRoles = getUserRolesFromRequest(request);
+            if(userRoles!=null){
+                logger.info("userRoles"+userRoles.toString());
+            }else
+                logger.info("userRole is null");
+
             authorizeUserRole(userRoles, managingRoles);
             return fetchUserIdFromToken(request);
         } else {
