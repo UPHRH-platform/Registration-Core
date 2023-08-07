@@ -248,6 +248,78 @@
                 "@context": {
                   "name": "schema:Text"
                 }
+              },
+              "mothersName": {
+                "@id": "https://github.com/sunbird-specs/vc-specs#mothersName",
+                "@context": {
+                  "name": "schema:Text"
+                }
+              },
+              "fathersName": {
+                "@id": "https://github.com/sunbird-specs/vc-specs#fathersName",
+                "@context": {
+                  "name": "schema:Text"
+                }
+              },
+              "address": {
+                "@id": "https://github.com/sunbird-specs/vc-specs#address",
+                "@context": {
+                  "name": "schema:Text"
+                }
+              },
+              "courseName": {
+                "@id": "https://github.com/sunbird-specs/vc-specs#courseName",
+                "@context": {
+                  "name": "schema:Text"
+                }
+              },
+              "council": {
+                "@id": "https://github.com/sunbird-specs/vc-specs#council",
+                "@context": {
+                  "name": "schema:Text"
+                }
+              },
+              "joiningMonth": {
+                "@id": "https://github.com/sunbird-specs/vc-specs#joiningMonth",
+                "@context": {
+                  "name": "schema:Text"
+                }
+              },
+              "joiningYear": {
+                "@id": "https://github.com/sunbird-specs/vc-specs#joiningYear",
+                "@context": {
+                  "name": "schema:Text"
+                }
+              },
+              "passingMonth": {
+                "@id": "https://github.com/sunbird-specs/vc-specs#passingMonth",
+                "@context": {
+                  "name": "schema:Text"
+                }
+              },
+              "passingYear": {
+                "@id": "https://github.com/sunbird-specs/vc-specs#passingYear",
+                "@context": {
+                  "name": "schema:Text"
+                }
+              },
+              "examBody": {
+                "@id": "https://github.com/sunbird-specs/vc-specs#examBody",
+                "@context": {
+                  "name": "schema:Text"
+                }
+              },
+              "finalYearRollNo": {
+                "@id": "https://github.com/sunbird-specs/vc-specs#finalYearRollNo",
+                "@context": {
+                  "name": "schema:Text"
+                }
+              },
+              "date": {
+                "@id": "https://github.com/sunbird-specs/vc-specs#date",
+                "@context": {
+                  "name": "schema:Text"
+                }
               }
             }
           ],
