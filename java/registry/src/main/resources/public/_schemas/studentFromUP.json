@@ -1,0 +1,185 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "type": "object",
+  "properties": {
+    "StudentFromUP": {
+      "$ref": "#/definitions/StudentFromUP"
+    }
+  },
+  "required": ["StudentFromUP"],
+  "title": "StudentFromUP",
+  "definitions": {
+    "StudentFromUP": {
+      "$id": "#/properties/StudentFromUP",
+      "type": "object",
+      "title": "StudentFromUP",
+      "properties": {
+        "registrationType": {
+          "$id": "#/properties/registrationType",
+          "type": "string",
+          "title": "registrationType",
+          "required": [
+            "name",
+            "phoneNumber",
+            "email",
+            "council"
+          ],
+          "uniqueIndexFields": [
+            "phoneNumber"
+          ],
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "phoneNumber": {
+              "type": "string"
+            },
+            "email": {
+              "type": "string"
+            },
+            "council": {
+              "type": "string"
+            },
+            "mothersName": {
+              "$id": "#/properties/mothersName",
+              "type": "string",
+              "title": "motherName"
+            },
+            "fathersName": {
+              "$id": "#/properties/fathersName",
+              "type": "string",
+              "title": "fatherName"
+            },
+            "dateOfBirth": {
+              "$id": "#/properties/dateOfBirth",
+              "type": "string",
+              "title": "dateOfBirth"
+            },
+            "aadhaarNo": {
+              "$id": "#/properties/aadhaarNo",
+              "type": "string",
+              "title": "aadhaarNo"
+            },
+            "barCode": {
+              "$id": "#/properties/barCode",
+              "type": "string",
+              "title": "barCode"
+            },
+            "candidatePic": {
+              "$id": "#/properties/candidatePic",
+              "type": "string",
+              "title": "candidatePic"
+            },
+            "gender": {
+              "$id": "#/properties/gender",
+              "type": "string",
+              "title": "gender",
+              "enum": ["male", "female"]
+            },
+            "courseName": {
+              "$id": "#/properties/courseName",
+              "type": "string",
+              "title": "courseName"
+            },
+            "nursingCollage": {
+              "$id": "#/properties/nursingCollage",
+              "type": "string",
+              "title": "nursingCollage"
+            },
+            "joiningMonth": {
+              "$id": "#/properties/joiningMonth",
+              "type": "string",
+              "title": "joiningMonth"
+            },
+            "joiningYear": {
+              "$id": "#/properties/joiningYear",
+              "type": "string",
+              "title": "joiningYear"
+            },
+            "passingMonth": {
+              "$id": "#/properties/passingMonth",
+              "type": "string",
+              "title": "passingMonth"
+            },
+            "passingYear": {
+              "$id": "#/properties/passingYear",
+              "type": "string",
+              "title": "passingYear"
+            },
+            "finalYearRollNo": {
+              "$id": "#/properties/finalYearRollNo",
+              "type": "string",
+              "title": "finalYearRollNo"
+            },
+            "examBody": {
+              "$id": "#/properties/examBody",
+              "type": "string",
+              "title": "examBody"
+            }
+          }
+        }
+      }
+    }
+  },
+  "_osConfig": {
+    "ownershipAttributes": [
+      {
+        "email": "/email",
+        "mobile": "/phoneNumber",
+        "userId": "/phoneNumber"
+      }
+    ],
+    "inviteRoles": ["anonymous"],
+    "roles": ["Regulator"],
+    "attestationPolicies": [
+      {
+        "name": "studentUPVerification",
+        "conditions": "(ATTESTOR#$.council#.contains(REQUESTER#$.council#))",
+        "type": "MANUAL",
+        "attestorPlugin": "did:internal:ClaimPluginActor?entity=Regulator",
+        "attestationProperties": {
+          "name": "$.name",
+          "mothersName": "$.mothersName",
+          "fathersName": "$.fathersName",
+          "council": "$.council",
+          "courseName": "$.courseName",
+          "joiningMonth": "$.joiningMonth",
+          "joiningYear": "$.joiningYear",
+          "passingMonth": "$.passingMonth",
+          "passingYear": "$.passingYear",
+          "examBody": "$.examBody",
+          "finalYearRollNo": "$.finalYearRollNo",
+          "date": "$.date"
+        },
+        "credentialTemplate": {
+          "@context": [
+            "https://www.w3.org/2018/credentials/v1",
+            "https://raw.githubusercontent.com/kumarpawantarento/templates/main/registration"
+          ],
+          "type": ["VerifiableCredential"],
+          "issuanceDate": "2021-08-27T10:57:57.237Z",
+          "credentialSubject": {
+            "type": "Person",
+            "name": "{{name}}",
+            "mothersName": "{{mothersName}}",
+            "fathersName": "{{fathersName}}",
+            "courseName": "{{courseName}}",
+            "joiningMonth": "{{joiningMonth}}",
+            "joiningYear": "{{joiningYear}}",
+            "passingMonth": "{{passingMonth}}",
+            "passingYear": "{{passingYear}}",
+            "examBody": "{{examBody}}",
+            "finalYearRollNo": "{{finalYearRollNo}}",
+            "date": "{{date}}"
+          },
+          "issuer": "did:web:sunbirdrc.dev/vc/skill"
+        }
+      }
+    ],
+    "certificateTemplates": {
+      "StudentForeignVerificationTemp": "https://raw.githubusercontent.com/kumarpawantarento/templates/main/nursingANM.html",
+      "StudentForeignVerification": "https://raw.githubusercontent.com/kumarpawantarento/templates/main/nursingANM.html"
+    }
+  }
+}
+

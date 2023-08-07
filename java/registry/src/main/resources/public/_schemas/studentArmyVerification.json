@@ -1,0 +1,275 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema",
+    "type": "object",
+    "properties": {
+      "StudentNursingArmy": {
+        "$ref": "#/definitions/StudentNursingArmy"
+      }
+    },
+    "required": [
+      "StudentNursingArmy"
+    ],
+    "title": "StudentNursingArmy",
+    "definitions": {
+      "StudentNursingArmy": {
+        "$id": "#/properties/StudentNursingArmy",
+        "type": "object",
+        "title": "StudentNursingArmy",
+        "required": [
+          "name",
+          "phoneNumber",
+          "email"
+        ],
+        "uniqueIndexFields": [
+          "phoneNumber"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "credentials": {
+            "type": "string"
+          },
+          "phoneNumber": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "council": {
+            "type": "string"
+          },
+          "candidatePics": {
+            "$id": "#/properties/candidatePics",
+            "type": "string",
+            "title": "candidatePics"
+          },
+          "barcode": {
+            "$id": "#/properties/barcode",
+            "type": "string",
+            "title": "barcode"
+          },
+          "dateOfBirth": {
+            "$id": "#/properties/dateOfBirth",
+            "type": "string",
+            "title": "dateOfBirth"
+          },
+          "mothersName": {
+            "$id": "#/properties/mothersName",
+            "type": "string",
+            "title": "mothersName"
+          },
+          "fathersName": {
+            "$id": "#/properties/fathersName",
+            "type": "string",
+            "title": "fathersName"
+          },
+          "aadhaarNo": {
+            "$id": "#/properties/aadhaarNo",
+            "type": "string",
+            "title": "aadhaarNo"
+          },
+          "gender": {
+            "$id": "#/properties/gender",
+            "type": "string",
+            "title": "gender",
+            "enum": [
+              "male",
+              "female"
+            ]
+          },
+          "courseName": {
+            "$id": "#/properties/courseName",
+            "type": "string",
+            "title": "courseName"
+          },
+          "nursingCollage": {
+            "$id": "#/properties/nursingCollage",
+            "type": "string",
+            "title": "nursingCollage"
+          },
+          "joiningMonth": {
+            "$id": "#/properties/joiningMonth",
+            "type": "string",
+            "title": "joiningMonth"
+          },
+          "joiningYear": {
+            "$id": "#/properties/joiningYear",
+            "type": "string",
+            "title": "joiningYear"
+          },
+          "passingMonth": {
+            "$id": "#/properties/passingMonth",
+            "type": "string",
+            "title": "passingMonth"
+          },
+          "passingYear": {
+            "$id": "#/properties/passingYear",
+            "type": "string",
+            "title": "passingYear"
+          },
+          "finalYearRollNo": {
+            "$id": "#/properties/finalYearRollNo",
+            "type": "string",
+            "title": "finalYearRollNo"
+          },
+          "examBody": {
+            "$id": "#/properties/examBody",
+            "type": "string",
+            "title": "examBody"
+          },
+          "armyRegNo": {
+            "$id": "#/properties/armyRegNo",
+            "type": "string",
+            "title": "armyRegNo"
+          },
+          "date": {
+            "$id": "#/properties/date",
+            "type": "string",
+            "title": "date"
+          },
+          "address": {
+            "$id": "#/properties/address",
+            "type": "object",
+            "title": "address",
+            "properties": {
+              "address-text": {
+                "type": "string",
+                "title": "Plot"
+              },
+              "state": {
+                "$id": "#/properties/state",
+                "type": "string",
+                "title": "State",
+                "enum": [
+                  "Andaman and Nicobar Islands",
+                  "Andhra Pradesh",
+                  "Arunachal Pradesh",
+                  "Assam",
+                  "Bihar",
+                  "Chandigarh",
+                  "Chhattisgarh",
+                  "Dadra and Nagar Haveli",
+                  "Daman and Diu",
+                  "Delhi",
+                  "Goa",
+                  "Gujarat",
+                  "Haryana",
+                  "Himachal Pradesh",
+                  "Jammu and Kashmir",
+                  "Jharkhand",
+                  "Karnataka",
+                  "Kerala",
+                  "Ladakh",
+                  "Lakshadweep",
+                  "Madhya Pradesh",
+                  "Maharashtra",
+                  "Manipur",
+                  "Meghalaya",
+                  "Mizoram",
+                  "Nagaland",
+                  "Odisha",
+                  "Puducherry",
+                  "Punjab",
+                  "Rajasthan",
+                  "Sikkim",
+                  "Tamil Nadu",
+                  "Telangana",
+                  "Tripura",
+                  "Uttar Pradesh",
+                  "Uttarakhand",
+                  "West Bengal"
+                ]
+              },
+              "district": {
+                "$id": "#/properties/district",
+                "type": "string",
+                "title": "district"
+              },
+              "country": {
+                "$id": "#/properties/country",
+                "type": "string",
+                "title": "country"
+              },
+              "pincode": {
+                "$id": "#/properties/pincode",
+                "type": "string",
+                "title": "pincode"
+              }
+            }
+          }  
+
+        }
+      }
+    },
+    "_osConfig": {
+      "ownershipAttributes": [
+        {
+          "email": "/email",
+          "mobile": "/phoneNumber",
+          "userId": "/phoneNumber"
+        }
+      ],
+      "inviteRoles": [
+        "anonymous"
+      ],
+      "roles": [
+        "Regulator"
+      ],
+      "attestationPolicies": [
+        {
+          "name": "studentArmyVerification",
+          "conditions": "(ATTESTOR#$.council#.contains(REQUESTER#$.council#))",
+          "type": "MANUAL",
+          "attestorPlugin": "did:internal:ClaimPluginActor?entity=Regulator",
+          "attestationProperties": {
+            "name": "$.name",
+            "email": "$.email",
+            "phoneNumber": "$.phoneNumber",
+            "mothersName": "$.mothersName",
+            "fathersName": "$.fathersName",
+            "courseName": "$.courseName",
+            "joiningMonth": "$.joiningMonth",
+            "joiningYear": "$.joiningYear",
+            "passingMonth": "$.passingMonth",
+            "passingYear": "$.passingYear",
+            "examBody": "$.examBody",
+            "finalYearRollNo": "$.finalYearRollNo",
+            "date": "$.date",
+            "armyRegNo": "$.armyRegNo"
+          },
+          "credentialTemplate": {
+            "@context": [
+              "https://www.w3.org/2018/credentials/v1",
+              "https://raw.githubusercontent.com/kumarpawantarento/templates/main/registration"
+            ],
+            "type": [
+              "VerifiableCredential"
+            ],
+            "issuanceDate": "2021-08-27T10:57:57.237Z",
+            "credentialSubject": {
+              "type": "Person",
+              "name": "{{name}}",
+              "mothersName": "{{mothersName}}",
+              "fathersName": "{{fathersName}}",
+              "address": "{{address}}",
+              "courseName": "{{courseName}}",
+              "joiningMonth": "{{joiningMonth}}",
+              "joiningYear": "{{joiningYear}}",
+              "passingMonth": "{{passingMonth}}",
+              "passingYear": "{{passingYear}}",
+              "examBody": "{{examBody}}",
+              "finalYearRollNo": "{{finalYearRollNo}}",
+              "date": "{{date}}",
+              "armyRegNo": "{{armyRegNo}}"
+            },
+            "issuer": "did:web:sunbirdrc.dev/vc/skill"
+          }
+        }
+      ],
+      "certificateTemplates": {
+        "StudentForeignVerificationTemp": "https://raw.githubusercontent.com/kumarpawantarento/templates/main/nursingANM.html",
+        "StudentForeignVerification": "https://raw.githubusercontent.com/kumarpawantarento/templates/main/nursingANM.html"
+      }
+    }
+  }
