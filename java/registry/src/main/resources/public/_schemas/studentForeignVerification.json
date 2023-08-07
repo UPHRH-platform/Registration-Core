@@ -2,17 +2,19 @@
   "$schema": "http://json-schema.org/draft-07/schema",
   "type": "object",
   "properties": {
-    "StudentGoodstanding": {
-      "$ref": "#/definitions/StudentGoodstanding"
+    "StudentForeignVerification": {
+      "$ref": "#/definitions/StudentForeignVerification"
     }
   },
-  "required": ["StudentGoodstanding"],
-  "title": "StudentGoodstanding",
+  "required": [
+    "StudentForeignVerification"
+  ],
+  "title": "StudentForeignVerification",
   "definitions": {
-    "StudentGoodstanding": {
-      "$id": "#/properties/StudentGoodstanding",
+    "StudentForeignVerification": {
+      "$id": "#/properties/StudentForeignVerification",
       "type": "object",
-      "title": "StudentGoodstanding",
+      "title": "StudentForeignVerification",
       "required": [
         "name",
         "phoneNumber",
@@ -28,25 +30,15 @@
           "type": "string",
           "title": "name"
         },
-          "marriedName": {
-          "$id": "#/properties/marriedName",
-          "type": "string",
-          "title": "marriedName"
-        },
-        "maidenName": {
-          "$id": "#/properties/maidenName",
-          "type": "string",
-          "title": "maidenName"
-        },
         "fathersName": {
           "$id": "#/properties/fathersName",
           "type": "string",
           "title": "fathersName"
         },
-        "presentAddress": {
-          "$id": "#/properties/presentAddress",
+        "address": {
+          "$id": "#/properties/address",
           "type": "string",
-          "title": "presentAddress"
+          "title": "address"
         },
         "phoneNumber": {
           "$id": "#/properties/phoneNumber",
@@ -57,18 +49,6 @@
           "$id": "#/properties/email",
           "type": "string",
           "title": "email"
-        },
-        "professionalQualification": {
-          "$id": "#/properties/professionalQualification",
-          "type": "string",
-          "enum": [
-            "A.N.M",
-            "Midwife",
-            "H.W",
-            "Nurse",
-            "B.SC.Nursing"
-          ],
-          "title": "professionalQualification"
         },
         "trainingCenter": {
           "$id": "#/properties/trainingCenter",
@@ -89,6 +69,26 @@
           "$id": "#/properties/workPlace",
           "type": "string",
           "title": "workPlace"
+        },
+        "date": {
+          "$id": "#/properties/date",
+          "type": "string",
+          "title": "date"
+        },
+        "refNo": {
+          "$id": "#/properties/refNo",
+          "type": "string",
+          "title": "refNo"
+        },
+        "validityOfRegistration": {
+          "$id": "#/properties/validityOfRegistration",
+          "type": "string",
+          "title": "validityOfRegistration"
+        },
+        "dob": {
+          "$id": "#/properties/dob",
+          "type": "string",
+          "title": "dob"
         }
       }
     }
@@ -101,27 +101,32 @@
         "userId": "/phoneNumber"
       }
     ],
-    "inviteRoles": ["anonymous"],
-    "roles": ["Regulator"],
+    "inviteRoles": [
+      "anonymous"
+    ],
+    "roles": [
+      "Regulator"
+    ],
     "attestationPolicies": [
       {
-        "name": "StudentGoodStandingVerification",
+        "name": "StudentForeignVerify",
         "conditions": "(ATTESTOR#$.council#.contains(REQUESTER#$.council#))",
         "type": "MANUAL",
         "attestorPlugin": "did:internal:ClaimPluginActor?entity=Regulator",
         "attestationProperties": {
           "name": "$.name",
-          "marriedName": "$.marriedName",
-          "maidenName": "$.maidenName",
           "fathersName": "$.fathersName",
-          "presentAddress": "$.presentAddress",
+          "address": "$.address",
           "phoneNumber": "$.phoneNumber",
           "email": "$.email",
-          "professionalQualification": "$.professionalQualification",
           "trainingCenter": "$.trainingCenter",
           "registrationNumber": "$.registrationNumber",
           "workPlace": "$.workPlace",
-          "council":"$.council"
+          "council": "$.council",
+          "refNo": "$.refNo",
+          "date": "$.date",
+          "validityOfRegistration": "$.validityOfRegistration",
+          "dob": "$.dob"
         },
         "credentialTemplate": {
           "@context": [
@@ -150,32 +155,14 @@
                   "name": "schema:Text"
                 }
               },
-              "maidenName": {
-              "@id": "https://github.com/sunbird-specs/vc-specs#maidenName",
-              "@context": {
-                "name": "schema:Text"
-              }
-            },
-              "marriedName": {
-              "@id": "https://github.com/sunbird-specs/vc-specs#marriedName",
-              "@context": {
-                "name": "schema:Text"
-              }
-            },
               "fathersName": {
-                "@id": "https://github.com/sunbird-specs/vc-specs#marriedName",
+                "@id": "https://github.com/sunbird-specs/vc-specs#fathersName",
                 "@context": {
                   "name": "schema:Text"
                 }
               },
-              "trainingCenter": {
-                "@id": "https://github.com/sunbird-specs/vc-specs#trainingCenter",
-                "@context": {
-                  "name": "schema:Text"
-                }
-              },
-              "presentAddress": {
-                "@id": "https://github.com/sunbird-specs/vc-specs#marriedName",
+              "address": {
+                "@id": "https://github.com/sunbird-specs/vc-specs#address",
                 "@context": {
                   "name": "schema:Text"
                 }
@@ -192,8 +179,8 @@
                   "name": "schema:Text"
                 }
               },
-              "professionalQualification": {
-                "@id": "https://github.com/sunbird-specs/vc-specs#professionalQualification",
+              "trainingCenter": {
+                "@id": "https://github.com/sunbird-specs/vc-specs#trainingCenter",
                 "@context": {
                   "name": "schema:Text"
                 }
@@ -204,15 +191,47 @@
                   "name": "schema:Text"
                 }
               },
+              "validityOfRegistration": {
+                "@id": "https://github.com/sunbird-specs/vc-specs#validityOfRegistration",
+                "@context": {
+                  "name": "schema:Text"
+                }
+              },
+              "council": {
+                "@id": "https://github.com/sunbird-specs/vc-specs#council",
+                "@context": {
+                  "name": "schema:Text"
+                }
+              },
+              "dob": {
+                "@id": "https://github.com/sunbird-specs/vc-specs#dob",
+                "@context": {
+                  "name": "schema:Text"
+                }
+              },
               "workPlace": {
                 "@id": "https://github.com/sunbird-specs/vc-specs#workPlace",
+                "@context": {
+                  "name": "schema:Text"
+                }
+              },
+              "refNo": {
+                "@id": "https://github.com/sunbird-specs/vc-specs#refNo",
+                "@context": {
+                  "name": "schema:Text"
+                }
+              },
+              "date": {
+                "@id": "https://github.com/sunbird-specs/vc-specs#date",
                 "@context": {
                   "name": "schema:Text"
                 }
               }
             }
           ],
-          "type": ["VerifiableCredential"],
+          "type": [
+            "VerifiableCredential"
+          ],
           "issuanceDate": "2021-08-27T10:57:57.237Z",
           "credentialSubject": {
             "type": "Person",
@@ -225,6 +244,8 @@
             "email": "{{email}}",
             "professionalQualification": "{{professionalQualification}}",
             "trainingCenter": "{{trainingCenter}}",
+            "refNo": "{{refNo}}",
+            "date": "{{date}}",
             "registrationNumber": "{{registrationNumber}}",
             "workPlace": "{{workPlace}}"
           },
@@ -233,7 +254,7 @@
       }
     ],
     "certificateTemplates": {
-      "StudentGoodStandingTemp": "https://raw.githubusercontent.com/kumarpawantarento/templates/main/Foreign-certificate.html"
+      "StudentForeignVerificationTemp": "https://raw.githubusercontent.com/kumarpawantarento/templates/main/Foreign-certificate.html"
     }
   }
 }
