@@ -89,6 +89,19 @@
           "$id": "#/properties/dob",
           "type": "string",
           "title": "dob"
+        },
+        "doc-proof": {
+          "type": "string", "title": "doc-proof"
+        },
+        "candidatePic": {
+          "$id": "#/properties/candidatePic",
+          "type": "string",
+          "title": "candidatePic"
+        },
+        "paymentStatus": {
+          "$id": "#/properties/paymentStatus",
+          "type": "string",
+          "title": "paymentStatus"
         }
       }
     }
@@ -105,7 +118,7 @@
       "anonymous"
     ],
     "roles": [
-      "Regulator"
+      "StudentForeignVerification"
     ],
     "attestationPolicies": [
       {
@@ -126,7 +139,9 @@
           "refNo": "$.refNo",
           "date": "$.date",
           "validityOfRegistration": "$.validityOfRegistration",
-          "dob": "$.dob"
+          "dob": "$.dob",
+          "doc-proof": "$.doc-proof",
+          "paymentStatus": "$.paymentStatus"
         },
         "credentialTemplate": {
           "@context": [
@@ -226,7 +241,19 @@
                 "@context": {
                   "name": "schema:Text"
                 }
+              },
+              "doc-proof": {
+                "@id": "https://github.com/sunbird-specs/vc-specs#doc-proof",
+                "@context": {
+                  "name": "schema:Text"
+                }
+              },
+              "paymentStatus": {
+              "@id": "https://github.com/sunbird-specs/vc-specs#paymentStatus",
+              "@context": {
+                "name": "schema:Text"
               }
+            }
             }
           ],
           "type": [

@@ -89,6 +89,14 @@
           "$id": "#/properties/workPlace",
           "type": "string",
           "title": "workPlace"
+        },
+        "doc-proof": {
+              "type": "string", "title": "All Document Proof"
+        },
+        "paymentStatus": {
+          "$id": "#/properties/paymentStatus",
+          "type": "string",
+          "title": "paymentStatus"
         }
       }
     }
@@ -121,7 +129,9 @@
           "trainingCenter": "$.trainingCenter",
           "registrationNumber": "$.registrationNumber",
           "workPlace": "$.workPlace",
-          "council":"$.council"
+          "council":"$.council",
+          "doc-proof": "$.doc-proof",
+          "paymentStatus": "$.paymentStatus"
         },
         "credentialTemplate": {
           "@context": [
@@ -209,7 +219,20 @@
                 "@context": {
                   "name": "schema:Text"
                 }
+              },
+              "doc-proof": {
+                "@id": "https://github.com/sunbird-specs/vc-specs#doc-proof",
+                "@context": {
+                  "name": "schema:Text"
+                }
+              },
+              "paymentStatus": {
+                "@id": "https://github.com/sunbird-specs/vc-specs#paymentStatus",
+                "@context": {
+                  "name": "schema:Text"
+                }
               }
+
             }
           ],
           "type": ["VerifiableCredential"],
