@@ -5,6 +5,7 @@ import dev.sunbirdrc.claim.dto.ClaimWithNotesDTO;
 import dev.sunbirdrc.claim.entity.Claim;
 import dev.sunbirdrc.claim.entity.ClaimNote;
 import dev.sunbirdrc.claim.exception.ClaimAlreadyProcessedException;
+import dev.sunbirdrc.claim.exception.InvalidInputException;
 import dev.sunbirdrc.claim.exception.ResourceNotFoundException;
 import dev.sunbirdrc.claim.exception.UnAuthorizedException;
 import dev.sunbirdrc.claim.model.ClaimStatus;
@@ -12,6 +13,7 @@ import dev.sunbirdrc.claim.repository.ClaimNoteRepository;
 import dev.sunbirdrc.claim.repository.ClaimRepository;
 import dev.sunbirdrc.pojos.attestation.Action;
 import dev.sunbirdrc.registry.middleware.util.EntityUtil;
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -98,6 +100,7 @@ public class ClaimService {
     }
 
     private Claim updateClaim(JsonNode requestBody, Claim claim) {
+        logger.info("CredType"+claim.getCredType());
         JsonNode attestorNode = requestBody.get(ATTESTOR_INFO);
         if(requestBody.has(NOTES)) {
             addNotes(requestBody.get(NOTES).asText(), claim, EntityUtil.getFullNameOfTheEntity(attestorNode));
@@ -137,5 +140,28 @@ public class ClaimService {
         claimWithNotesDTO.setNotes(notes);
         claimWithNotesDTO.setClaim(claim);
         return claimWithNotesDTO;
+    }
+
+    /**
+     * @param entityId
+     * @param status
+     */
+    public void updateOutsideStudentStatus(String entityId, String status) {
+        if (!StringUtils.isEmpty(entityId) && status != null) {
+            List<Claim> claimList = claimRepository.findByEntityId(entityId);
+
+            if (claimList != null && !claimList.isEmpty()) {
+                Claim claim = claimList.get(0);
+
+                if ("Completed".equalsIgnoreCase(claim.getOutsideStudentStatus())) {
+                    throw new ClaimAlreadyProcessedException("Claim is already completed");
+                } else {
+                    claim.setOutsideStudentStatus(status);
+                    claimRepository.save(claim);
+                }
+            }
+        } else {
+            throw new InvalidInputException("Entity id or status is not valid");
+        }
     }
 }

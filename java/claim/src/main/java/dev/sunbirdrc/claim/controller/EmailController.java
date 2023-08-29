@@ -1,7 +1,7 @@
 package dev.sunbirdrc.claim.controller;
 
-import dev.sunbirdrc.claim.dto.BarCode;
-import dev.sunbirdrc.claim.dto.MailDto;
+import dev.sunbirdrc.claim.dto.*;
+import dev.sunbirdrc.claim.service.AsyncMailSender;
 import dev.sunbirdrc.claim.service.EmailService;
 import net.sourceforge.barbecue.Barcode;
 import net.sourceforge.barbecue.BarcodeFactory;
@@ -13,10 +13,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.*;
 
 import javax.imageio.ImageIO;
 import javax.xml.bind.DatatypeConverter;
@@ -31,6 +28,10 @@ public class EmailController {
 
     @Autowired
     private EmailService emailService;
+
+    @Autowired
+    private AsyncMailSender asyncMailSender;
+
     private static final Logger logger = LoggerFactory.getLogger(EmailController.class);
     private static final Font BARCODE_TEXT_FONT = new Font(Font.SANS_SERIF, Font.PLAIN, 8);
     @Autowired
@@ -111,5 +112,25 @@ public class EmailController {
         return body;
     }
 
+    @RequestMapping(value = "/api/v1/sendCertificateMail", method = RequestMethod.POST)
+    public ResponseEntity<String> sendCertificateMail(@RequestBody CertificateMailDto certificateMailDto) {
+        emailService.sendCertificateMail(certificateMailDto);
+        return new ResponseEntity<>("Mail is sending", HttpStatus.OK);
+    }
 
+    @RequestMapping(value = "/api/v1/sendPendingForeignItemMail/{claimId}", method = RequestMethod.GET)
+    public ResponseEntity<String> sendPendingItemMail(@RequestHeader HttpHeaders headers,
+                                                      @PathVariable String claimId) {
+
+        emailService.collectAndSendForeignCoucilMailManually(claimId);
+
+        return new ResponseEntity<>("Sending manual foreign pending item mail", HttpStatus.OK);
+    }
+
+    @RequestMapping(value = "/api/v1/sendEcPendingItemMail", method = RequestMethod.POST)
+    public ResponseEntity<String> sendPendingItemMail(@RequestHeader HttpHeaders headers,
+                                                      @RequestBody ManualPendingMailDTO manualPendingMailDTO) {
+        asyncMailSender.sendEcPendingItemMail(manualPendingMailDTO);
+        return new ResponseEntity<>("Mail is sending", HttpStatus.OK);
+    }
 }

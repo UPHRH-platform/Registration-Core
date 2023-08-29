@@ -6,9 +6,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import dev.sunbirdrc.pojos.dto.ClaimDTO;
 import dev.sunbirdrc.registry.controller.RegistryController;
 import dev.sunbirdrc.registry.dao.Learner;
-import dev.sunbirdrc.registry.model.dto.BarCode;
-import dev.sunbirdrc.registry.model.dto.FileDto;
-import dev.sunbirdrc.registry.model.dto.MailDto;
+import dev.sunbirdrc.registry.model.dto.*;
 import lombok.NonNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -21,6 +19,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -32,7 +31,8 @@ import java.util.List;
 
 @Component
 public class ClaimRequestClient {
-    private static Logger logger = LoggerFactory.getLogger(RegistryController.class);
+    private static final String GET_CERTIFICATE_NUMBER = "/api/v1/generate-certNumber";
+    private static Logger logger = LoggerFactory.getLogger(ClaimRequestClient.class);
     private final String claimRequestUrl;
     private final RestTemplate restTemplate;
     private static final String CLAIMS_PATH = "/api/v1/claims";
@@ -43,10 +43,15 @@ public class ClaimRequestClient {
     private static final String BAR_CODE_API = "/api/v1/barcode";
     private static final String SAVE_CRED_API = "/api/v1/credentials/save";
     private static final String GET_CRED_URL = "/api/v1/files/download?";
+
+    private static final String GET_COURSE_CATEGORY = "/api/v1/courses/diploma";
     private static final String PDF = ".PDF";
     private static final String GCS_CODE_API = "/api/v1/files/upload";
     private static final String CLAIM_MULTI_FILE_UPLOAD = "/api/v1/files/upload/multiple";
     private static String URL_APPENDER = "/";
+
+    private static final String MAIL_SEND_PENDING_FOREIGN_ITEM_URL = "/api/v1/sendPendingForeignItemMail/";
+    private static final String MAIL_SEND_EC_PENDING_ITEM_URL = "/api/v1/sendEcPendingItemMail/";
 
     ClaimRequestClient(@Value("${claims.url}") String claimRequestUrl, RestTemplate restTemplate) {
         this.claimRequestUrl = claimRequestUrl;
@@ -242,8 +247,59 @@ public class ClaimRequestClient {
         return fileDtoList;
     }
 
+    public String sendPendingForeignItemMail(String claimId) {
+        if (!StringUtils.isEmpty(claimId)) {
 
+            ResponseEntity<String> mailStatusResponse = restTemplate.getForEntity(
+                    claimRequestUrl + MAIL_SEND_PENDING_FOREIGN_ITEM_URL + claimId, String.class);
 
+            logger.info(">>>>>>>> Pending foreign item mail status: " + mailStatusResponse.getBody());
 
+            return mailStatusResponse.getBody();
+        } else {
+            logger.error(">>>>>>> Invalid claim id - while calling claim service for foreign pending item (manually)");
+        }
+
+        return "Failed to send mail to foreign pending item - invalid claim id";
+    }
+
+    public String sendEcPendingItemMail(ManualPendingMailDTO pendingMailDTO) {
+        String mailStatus = restTemplate.postForObject(
+                claimRequestUrl + MAIL_SEND_EC_PENDING_ITEM_URL, pendingMailDTO, String.class);
+
+        logger.info("Pending item mail status: " + mailStatus);
+        return mailStatus;
+    }
+
+    public List getCourseCategory(String category) {
+        String requestUrl = claimRequestUrl + GET_COURSE_CATEGORY;
+        MultiValueMap<String, String> queryParams = new LinkedMultiValueMap<>();
+        queryParams.add("category", category);
+        UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(requestUrl)
+                .queryParam("category", category);
+        // Set request headers if needed
+        HttpHeaders headers = new HttpHeaders();
+        // Add any required headers here
+        headers.set("accept", "*/*");
+        ResponseEntity<List> response = restTemplate.exchange(
+                builder.toUriString(), HttpMethod.GET, null, List.class, queryParams, headers
+        );        logger.info("end getCredentials ...");
+        return response.getBody();
+    }
+
+    ///api/v1/generate-certNumber
+
+    public Long getCertificateNumber() {
+        String requestUrl = claimRequestUrl + GET_CERTIFICATE_NUMBER;
+        UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(requestUrl);
+        // Set request headers if needed
+        HttpHeaders headers = new HttpHeaders();
+        // Add any required headers here
+        headers.set("accept", "*/*");
+        ResponseEntity<Long> response = restTemplate.exchange(
+                builder.toUriString(), HttpMethod.GET, null, Long.class, headers
+        );        logger.info("end getCredentials ...");
+        return response.getBody();
+    }
 
 }
