@@ -2,6 +2,7 @@ package dev.sunbirdrc.claim.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import dev.sunbirdrc.claim.dto.ClaimWithNotesDTO;
+import dev.sunbirdrc.claim.dto.ClaimWithSize;
 import dev.sunbirdrc.claim.entity.Claim;
 import dev.sunbirdrc.claim.service.ClaimService;
 import dev.sunbirdrc.claim.service.ClaimsAuthorizer;
@@ -46,6 +47,14 @@ public class ClaimsController {
         return new ResponseEntity<>(claims, HttpStatus.OK);
     }
 
+    @CrossOrigin (origins = "*")
+    @RequestMapping(value = "/api/v1/all-claims", method = RequestMethod.POST)
+    public ResponseEntity<ClaimWithSize> getAllClaims(@RequestHeader HttpHeaders headers) {
+        ClaimWithSize claims = claimService.findAllClaims();
+        return new ResponseEntity<>(claims, HttpStatus.OK);
+    }
+
+
 
     @RequestMapping(value = "/api/v2/getClaims", method = RequestMethod.POST)
     public ResponseEntity<List<Claim>> getStudentClaims(@RequestHeader HttpHeaders headers,
@@ -75,7 +84,7 @@ public class ClaimsController {
     @RequestMapping(value = "/api/v1/claims", method = RequestMethod.POST)
     public ResponseEntity<Claim> save(@RequestBody ClaimDTO claimDTO) {
         JSONObject jsonObject = new JSONObject(claimDTO.getPropertyData());
-        String credType1 = jsonObject.get("credType").toString();
+        String credType1 = jsonObject.get("claimType").toString();
         claimDTO.setCredtype(credType1);
         logger.info("Adding new claimDTO {} ", claimDTO.toString());
         logger.info("Cred Type new claimDTO {} ", claimDTO.getCredtype());

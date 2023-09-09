@@ -498,11 +498,17 @@ public class UserService {
      * @throws Exception
      */
     public void persistUserDetailsWithCredentials(@NonNull CustomUserDTO customUserDTO) throws Exception {
-        UserCredential userCredential = UserCredential.builder()
-                .userName(customUserDTO.getUsername())
-                .password(cipherEncoder.encodeText(customUserDTO.getPassword()))
-                .build();
-
+        Optional<UserCredential> byUserName = userCredentialRepository.findByUserName(customUserDTO.getUsername());
+        UserCredential userCredential = null;
+        if(byUserName.isPresent()){
+            userCredential = byUserName.get();
+            userCredential.setPassword(cipherEncoder.encodeText(customUserDTO.getPassword()));
+        } else {
+            userCredential = UserCredential.builder()
+                    .userName(customUserDTO.getUsername())
+                    .password(cipherEncoder.encodeText(customUserDTO.getPassword()))
+                    .build();
+        }
         userCredentialRepository.save(userCredential);
     }
 
@@ -554,15 +560,15 @@ public class UserService {
      */
     public UserTokenDetailsDTO getCustomUserTokenByOtp(CustomUserLoginDTO customUserLoginDTO) throws Exception {
         if (customUserLoginDTO != null && !StringUtils.isEmpty(customUserLoginDTO.getEmail())) {
+            LOGGER.info("CustomUserLoginDTO : {}", customUserLoginDTO);
             String username = customUserLoginDTO.getEmail();
-
             List<UserRepresentation> userRepresentationList = getUserDetails(username);
-
+            LOGGER.info("userRepresentationList {}", userRepresentationList);
             if (userRepresentationList != null && !userRepresentationList.isEmpty()) {
                 Optional<UserRepresentation> userRepresentationOptional = userRepresentationList.stream()
                         .filter(userRepresentation -> username.equalsIgnoreCase(userRepresentation.getUsername()))
                         .findFirst();
-
+                LOGGER.info("userRepresentationOptional {}", userRepresentationOptional);
                 if (!userRepresentationOptional.isPresent()) {
                     throw new OtpException("Username missing while verifying OTP");
                 }
@@ -614,8 +620,9 @@ public class UserService {
      */
     private @NonNull String getCustomUserCredentail(@NonNull String username) {
         Optional<UserCredential> userCredentialOptional = userCredentialRepository.findByUserName(username);
-
+        LOGGER.info("userRepresentationOptional1 {}", userCredentialOptional);
         if (userCredentialOptional.isPresent()) {
+            LOGGER.info("Credentials {} and {}",username, cipherEncoder.decodeText(userCredentialOptional.get().getPassword()));
             return cipherEncoder.decodeText(userCredentialOptional.get().getPassword());
         } else {
             throw new UserNotFoundException("User is not configured properly in User management system");

@@ -5,7 +5,10 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import dev.sunbirdrc.pojos.dto.ClaimDTO;
 import dev.sunbirdrc.registry.dao.Learner;
+import dev.sunbirdrc.registry.model.Document;
 import dev.sunbirdrc.registry.model.dto.*;
+import dev.sunbirdrc.registry.model.event.EventDao;
+import dev.sunbirdrc.registry.model.event.EventInternal;
 import lombok.NonNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -31,8 +34,13 @@ import java.util.List;
 @Component
 public class ClaimRequestClient {
     private static final String GET_CERTIFICATE_NUMBER = "/api/v1/generate-certNumber";
+
+    private static final String GET_TEMPLATE_KEY = "/api/v1/courses/course-template-key/";
+
+    private String DIGI_LOCKER_GET = "/api/v1/digilicker/osid/";
+    private String DIGI_LOCKER_SAVE = "/api/v1/digilicker";
     private static Logger logger = LoggerFactory.getLogger(ClaimRequestClient.class);
-    private final String claimRequestUrl;
+    private String claimRequestUrl;
     private final RestTemplate restTemplate;
     private static final String CLAIMS_PATH = "/api/v1/claims";
     private static final String FETCH_CLAIMS_PATH = "/api/v1/getClaims";
@@ -43,6 +51,7 @@ public class ClaimRequestClient {
     private static final String SAVE_CRED_API = "/api/v1/credentials/save";
     private static final String GET_CRED_URL = "/api/v1/files/download?";
 
+    private static final String SAVE_EVENT_SERVICE = "/v1/api/events";
     private static final String GET_COURSE_CATEGORY = "/api/v1/courses/diploma";
 
     private static final String GET_ALL_COURSES = "/api/v1/courses/";
@@ -100,6 +109,38 @@ public class ClaimRequestClient {
     public void sendMail(MailDto mail) {
         restTemplate.postForObject(claimRequestUrl + MAIL_SEND_URL, mail, HashMap.class);
         logger.info("Mail has successfully sent ...");
+    }
+
+    public void sendEvent(EventInternal event) {
+        HttpMethod method = HttpMethod.POST;
+        restTemplate.exchange(
+                claimRequestUrl + SAVE_EVENT_SERVICE,
+                HttpMethod.POST,
+                new HttpEntity<>(event),
+                EventDao.class
+        );
+        logger.info("Event has successfully published ...");
+    }
+
+    public void saveDocument(Document docs) {
+        HttpMethod method = HttpMethod.POST;
+        restTemplate.exchange(
+                claimRequestUrl + DIGI_LOCKER_SAVE,
+                HttpMethod.POST,
+                new HttpEntity<>(docs),
+                Document.class
+        );
+        logger.info("Document has successfully published ...");
+    }
+
+    public String getDocument(String osid) {
+        UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(claimRequestUrl + DIGI_LOCKER_GET+osid);
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("accept", "*/*");
+        ResponseEntity<String> response = restTemplate.exchange(
+                builder.toUriString(), HttpMethod.GET, null, String.class, headers
+        );        logger.info("end getDocument ...");
+        return response.getBody();
     }
 
     public String saveFileToGCS(Object certificate, String entityId) {
@@ -216,7 +257,7 @@ public class ClaimRequestClient {
         // Add any required headers here
         headers.set("accept", "*/*");
         ResponseEntity<byte[]> response = restTemplate.exchange(
-                builder.toUriString(), HttpMethod.POST, null, byte[].class, queryParams, headers
+                builder.toUriString(), HttpMethod.GET, null, byte[].class, queryParams, headers
         );        logger.info("end getCredentials ...");
         return response.getBody();
     }
@@ -284,7 +325,7 @@ public class ClaimRequestClient {
         headers.set("accept", "*/*");
         ResponseEntity<List> response = restTemplate.exchange(
                 builder.toUriString(), HttpMethod.GET, null, List.class, queryParams, headers
-        );        logger.info("end getCredentials ...");
+        );        logger.info("end getCourseCategory ...");
         return response.getBody();
     }
 
@@ -298,7 +339,7 @@ public class ClaimRequestClient {
         headers.set("accept", "*/*");
         ResponseEntity<List> response = restTemplate.exchange(
                 requestUrl, HttpMethod.GET, null, List.class, queryParams, headers
-        );        logger.info("end getCredentials ...");
+        );        logger.info("end getAllCourses ...");
         return response.getBody();
     }
 
@@ -314,7 +355,18 @@ public class ClaimRequestClient {
         headers.set("accept", "*/*");
         ResponseEntity<Long> response = restTemplate.exchange(
                 builder.toUriString(), HttpMethod.GET, null, Long.class, headers
-        );        logger.info("end getCredentials ...");
+        );        logger.info("end getCertificateNumber ...");
+        return response.getBody();
+    }
+
+    public String getTemplateKey(String courseName) {
+        String requestUrl = claimRequestUrl + GET_TEMPLATE_KEY + courseName;
+        UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(requestUrl);
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("accept", "*/*");
+        ResponseEntity<String> response = restTemplate.exchange(
+                builder.toUriString(), HttpMethod.GET, null, String.class, headers
+        );        logger.info("end getTemplateKey ...");
         return response.getBody();
     }
 

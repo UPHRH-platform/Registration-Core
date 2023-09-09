@@ -12,6 +12,7 @@ import freemarker.template.TemplateException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.lang.NonNull;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -22,6 +23,7 @@ import org.springframework.ui.freemarker.FreeMarkerTemplateUtils;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 import java.io.IOException;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -37,6 +39,9 @@ public class AsyncMailSender {
 
     @Autowired
     private Configuration freeMarkerConfiguration;
+
+    @Autowired
+    private FileService fileService;
 
     /**
      * @param pendingMailDTOList
@@ -190,6 +195,17 @@ public class AsyncMailSender {
                     "Pending action item"));
             mimeMessageHelper.setTo(manualPendingMailDTO.getOutsideEntityMailId());
             mimeMessageHelper.setText(generateManualEcPendingMailContent(manualPendingMailDTO), true);
+
+            byte[] doc = Base64.getDecoder().decode(manualPendingMailDTO.getAttachment());
+            mimeMessageHelper.addAttachment("CandidateDetails.pdf", new ByteArrayResource(doc));
+
+            if (manualPendingMailDTO.getDocProofs() != null && manualPendingMailDTO.getDocProofs().length > 0) {
+
+                for (int i = 0; i < manualPendingMailDTO.getDocProofs().length; i++) {
+                    mimeMessageHelper.addAttachment("DocProof_" + i,
+                            fileService.downloadFile(manualPendingMailDTO.getDocProofs()[i]));
+                }
+            }
 
             mailSender.send(mimeMessageHelper.getMimeMessage());
         } catch (Exception e) {

@@ -113,7 +113,11 @@
         "courseState": {"type": "string","title": "courseState"},
         "courseCouncil": {"type": "string","title": "courseCouncil"},
         "certificateNumber": {"type": "string","title": "certificateNumber"},
-        "claimType": {"type": "string","title": "claimType"}
+        "claimType": {"type": "string","title": "claimType"},
+        "university": {"type": "string", "default": "NA","title": "university"},
+        "candidateSignature": {"type": "string","default": "NA","title": "candidateSignature"},
+        "validityUpto": {"type": "string","default": "NA","title": "validityUpto"},
+        "requestType": {"type": "string","title": "requestType"}
       }
     }
   },
@@ -162,7 +166,11 @@
           "courseState": "$.courseState",
           "courseCouncil": "$.courseCouncil",
           "certificateNumber": "$.certificateNumber",
-          "claimType": "$.claimType"
+          "claimType": "$.claimType",
+          "university": "$.university",
+          "candidateSignature": "$.candidateSignature",
+          "validityUpto": "$.validityUpto",
+          "requestType": "$.requestType"
         },
         "credentialTemplate": {
           "@context": [
@@ -393,7 +401,32 @@
                 "@context": {
                   "name": "schema:Text"
                 }
+              },
+              "university": {
+                "@id": "https://github.com/sunbird-specs/vc-specs#university",
+                "@context": {
+                  "name": "schema:Text"
+                }
+              },
+              "candidateSignature": {
+                "@id": "https://github.com/sunbird-specs/vc-specs#candidateSignature",
+                "@context": {
+                  "name": "schema:Text"
+                }
+              },
+              "validityUpto": {
+                "@id": "https://github.com/sunbird-specs/vc-specs#validityUpto",
+                "@context": {
+                  "name": "schema:Text"
+                }
+              },
+              "requestType": {
+                "@id": "https://github.com/sunbird-specs/vc-specs#requestType",
+                "@context": {
+                  "name": "schema:Text"
+                }
               }
+
             }
           ],
           "type": ["VerifiableCredential"],
@@ -436,7 +469,11 @@
             "courseState": "{{courseState}}",
             "courseCouncil": "{{courseCouncil}}",
             "certificateNumber": "{{certificateNumber}}",
-            "claimType": "{{claimType}}"
+            "claimType": "{{claimType}}",
+            "university": "{{university}}",
+            "candidateSignature": "{{candidateSignature}}",
+            "validityUpto": "{{validityUpto}}",
+            "requestType": "{{requestType}}"
           },
           "issuer": "did:web:sunbirdrc.dev/vc/skill"
         }

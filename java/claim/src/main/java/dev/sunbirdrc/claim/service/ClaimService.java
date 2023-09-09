@@ -2,6 +2,7 @@ package dev.sunbirdrc.claim.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import dev.sunbirdrc.claim.dto.ClaimWithNotesDTO;
+import dev.sunbirdrc.claim.dto.ClaimWithSize;
 import dev.sunbirdrc.claim.entity.Claim;
 import dev.sunbirdrc.claim.entity.ClaimNote;
 import dev.sunbirdrc.claim.exception.ClaimAlreadyProcessedException;
@@ -63,6 +64,26 @@ public class ClaimService {
                 .filter(claim -> claimsAuthorizer.isAuthorizedAttestor(claim, attestorNode))
                 .collect(Collectors.toList());
         return toMap(claimsToAttestor, pageable);
+    }
+
+    public ClaimWithSize findAllClaims() {
+        ClaimWithSize claimWithSize = new ClaimWithSize();
+        List<Claim> claims = claimRepository.findAll();
+        claimWithSize.setTotalClaim(claims.size());
+        Long totalOpenClaims = claims.stream()
+                .filter(claim -> "OPEN".equals(claim.getStatus()))
+                .count();
+        Long totalApprovedClaims = claims.stream()
+                .filter(claim -> "APPROVED".equals(claim.getStatus()))
+                .count();
+        Long totalApprovedRejected = claims.stream()
+                .filter(claim -> "REJECTED".equals(claim.getStatus()))
+                .count();
+        claimWithSize.setClaimList(claims);
+        claimWithSize.setTotalOpen(totalOpenClaims.intValue());
+        claimWithSize.setTotalApproved(totalApprovedClaims.intValue());
+        claimWithSize.setTotalRejected(totalApprovedRejected.intValue());
+        return claimWithSize;
     }
 
     public List<Claim> findByRequestorName(String entity, Pageable pageable) {
