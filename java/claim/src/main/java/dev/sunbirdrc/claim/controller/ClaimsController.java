@@ -12,13 +12,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.web.PagedResourcesAssembler;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -43,7 +43,17 @@ public class ClaimsController {
                                                 @RequestBody JsonNode requestBody, Pageable pageable) {
         String entity = requestBody.get(LOWERCASE_ENTITY).asText();
         JsonNode attestorNode = requestBody.get(ATTESTOR_INFO);
-        Map<String, Object> claims = claimService.findClaimsForAttestor(entity, attestorNode, pageable);
+        Map<String, Object> claims = claimService.findClaimsForAttestor1(entity, attestorNode, pageable);
+        return new ResponseEntity<>(claims, HttpStatus.OK);
+    }
+
+    @RequestMapping(value = "/api/v1/getClaimsEntityType", method = RequestMethod.POST)
+    public ResponseEntity<Map<String, Object>> getClaimsByEntityType(@RequestHeader HttpHeaders headers,
+                                                         @RequestBody JsonNode requestBody, Pageable pageable) {
+        String entity = requestBody.get(LOWERCASE_ENTITY).asText();
+        String entityType = requestBody.get(LOWERCASE_ENTITY_TYPE).asText();
+        JsonNode attestorNode = requestBody.get(ATTESTOR_INFO);
+        Map<String, Object> claims = claimService.findClaimsForAttestorByEntityType(entity, entityType, attestorNode, pageable);
         return new ResponseEntity<>(claims, HttpStatus.OK);
     }
 
@@ -59,9 +69,16 @@ public class ClaimsController {
     @RequestMapping(value = "/api/v2/getClaims", method = RequestMethod.POST)
     public ResponseEntity<List<Claim>> getStudentClaims(@RequestHeader HttpHeaders headers,
                                                          @RequestBody JsonNode requestBody, Pageable pageable) {
-        String entity = requestBody.get(LOWERCASE_ENTITY).asText();
+        logger.info("Calling claim v2 getClaims");
+        //String entity = requestBody.get(LOWERCASE_ENTITY).asText();
         JsonNode attestorNode = requestBody.get(ATTESTOR_INFO);
         List<Claim> claims = claimService.findByRequestorName(attestorNode.asText(), pageable);
+        if(claims==null){
+            logger.info("claims in null in getClaims");
+            claims = new ArrayList<>();
+        }else{
+            logger.info("claims is not in getClaims Size"+claims.size());
+        }
         return new ResponseEntity<>(claims, HttpStatus.OK);
     }
     @RequestMapping(value = "/api/v1/getClaims/{claimId}", method = RequestMethod.POST)
@@ -79,6 +96,16 @@ public class ClaimsController {
         } else {
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }
+    }
+
+    @RequestMapping(value = "/api/v3/getClaims/{claimId}", method = RequestMethod.POST)
+    public ResponseEntity<ClaimWithNotesDTO> getClaimById(@RequestHeader HttpHeaders headers, @PathVariable String claimId) {
+        Optional<Claim> claim = claimService.findById(claimId);
+        if (!claim.isPresent()) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+            ClaimWithNotesDTO claimWithNotesDTO = claimService.generateNotesForTheClaim(claim.get());
+            return new ResponseEntity<>(claimWithNotesDTO, HttpStatus.OK);
     }
 
     @RequestMapping(value = "/api/v1/claims", method = RequestMethod.POST)

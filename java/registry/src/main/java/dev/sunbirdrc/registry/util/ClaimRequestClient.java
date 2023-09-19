@@ -1,9 +1,11 @@
 package dev.sunbirdrc.registry.util;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import dev.sunbirdrc.pojos.dto.ClaimDTO;
+import dev.sunbirdrc.registry.dao.CustomUserDto;
 import dev.sunbirdrc.registry.dao.Learner;
 import dev.sunbirdrc.registry.model.Document;
 import dev.sunbirdrc.registry.model.dto.*;
@@ -38,12 +40,17 @@ public class ClaimRequestClient {
     private static final String GET_TEMPLATE_KEY = "/api/v1/courses/course-template-key/";
 
     private String DIGI_LOCKER_GET = "/api/v1/digilicker/osid/";
+    private String DIGI_LOCKER_GET_OSID = "/api/v1/digilicker/uri/";
     private String DIGI_LOCKER_SAVE = "/api/v1/digilicker";
     private static Logger logger = LoggerFactory.getLogger(ClaimRequestClient.class);
     private String claimRequestUrl;
     private final RestTemplate restTemplate;
     private static final String CLAIMS_PATH = "/api/v1/claims";
     private static final String FETCH_CLAIMS_PATH = "/api/v1/getClaims";
+
+    private static final String FETCH_CLAIMS_PATH_ENTITY_TYPE = "/api/v1/getClaimsEntityType";
+
+    private static final String FETCH_CLAIMS_PATH_V3 = "/api/v3/getClaims";
     private static final String TEMPLATE_KEY = "/course-template-key/";
     private static final String FETCH_CLAIMS_STUDENT_PATH = "/api/v2/getClaims";
     private static final String MAIL_SEND_URL = "/api/v1/sendMail";
@@ -63,8 +70,12 @@ public class ClaimRequestClient {
     private static final String MAIL_SEND_PENDING_FOREIGN_ITEM_URL = "/api/v1/sendPendingForeignItemMail/";
     private static final String MAIL_SEND_EC_PENDING_ITEM_URL = "/api/v1/sendEcPendingItemMail/";
 
-    ClaimRequestClient(@Value("${claims.url}") String claimRequestUrl, RestTemplate restTemplate) {
+    private String userManagementUrl;
+    private static String KEYCLOAK_USER_PERSIST = "/api/v1/keycloak/persist/userCredential";
+
+    ClaimRequestClient(@Value("${claims.url}") String claimRequestUrl,@Value("${claims.usrmanageurl}")String userManagementUrl, RestTemplate restTemplate) {
         this.claimRequestUrl = claimRequestUrl;
+        this.userManagementUrl = userManagementUrl;
         this.restTemplate = restTemplate;
     }
 
@@ -82,12 +93,28 @@ public class ClaimRequestClient {
         return restTemplate.postForObject(claimRequestUrl + FETCH_CLAIMS_PATH + QUERY_PARAMS, requestBody, JsonNode.class);
     }
 
-    public JsonNode getStudentsClaims(JsonNode jsonNode, Pageable pageable, String entityName) {
+    public JsonNode getClaims(JsonNode jsonNode, Pageable pageable, String entityName, String entityType) {
         final String QUERY_PARAMS = "?size=" + pageable.getPageSize() + "&page="+pageable.getPageNumber();
         ObjectNode requestBody = JsonNodeFactory.instance.objectNode();
         requestBody.set("attestorInfo", jsonNode);
         requestBody.put("entity", entityName);
-        return restTemplate.postForObject(claimRequestUrl + FETCH_CLAIMS_STUDENT_PATH + QUERY_PARAMS, requestBody, JsonNode.class);
+        requestBody.put("entityType", entityType);
+        return restTemplate.postForObject(claimRequestUrl + FETCH_CLAIMS_PATH_ENTITY_TYPE + QUERY_PARAMS, requestBody, JsonNode.class);
+    }
+
+    public JsonNode getStudentsClaims(String email, Pageable pageable) {
+        final String QUERY_PARAMS = "?size=" + pageable.getPageSize() + "&page="+pageable.getPageNumber();
+        logger.info("Call Start From StudentsClaims");
+        ObjectNode requestBody = JsonNodeFactory.instance.objectNode();
+        ObjectMapper objectMapper = new ObjectMapper();
+
+        // Create a JSON object with a string value
+        ObjectNode jsonNode = JsonNodeFactory.instance.objectNode();
+
+        jsonNode.put("attestorInfo", email);
+        //requestBody.put("entity", entityName);
+        logger.info("Before Clam API call for Student URL"+claimRequestUrl + FETCH_CLAIMS_STUDENT_PATH);
+        return restTemplate.postForObject(claimRequestUrl + FETCH_CLAIMS_STUDENT_PATH + QUERY_PARAMS, jsonNode, JsonNode.class);
     }
 
     public JsonNode getClaim(JsonNode jsonNode, String entityName, String claimId) {
@@ -95,6 +122,11 @@ public class ClaimRequestClient {
         requestBody.set("attestorInfo", jsonNode);
         requestBody.put("entity", entityName);
         return restTemplate.postForObject(claimRequestUrl + FETCH_CLAIMS_PATH + "/" + claimId, requestBody, JsonNode.class);
+    }
+
+    public JsonNode getClaimOptional(JsonNode jsonNode, String entityName, String claimId) {
+        ObjectNode requestBody = JsonNodeFactory.instance.objectNode();
+        return restTemplate.postForObject(claimRequestUrl + FETCH_CLAIMS_PATH_V3 + "/" + claimId, null, JsonNode.class);
     }
 
     public ResponseEntity<Object> attestClaim(JsonNode attestationRequest, String claimId) {
@@ -122,6 +154,22 @@ public class ClaimRequestClient {
         logger.info("Event has successfully published ...");
     }
 
+    public String persistUserinKeycloak(CustomUserDto userDto, HttpMethod method, HttpHeaders headers) {
+        UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(userManagementUrl + KEYCLOAK_USER_PERSIST);
+        String response = String.valueOf(restTemplate.exchange(
+                builder.toUriString(), method, new HttpEntity<>(userDto), String.class, headers
+        ));
+//        String response = String.valueOf(restTemplate.exchange(
+//                userManagementUrl + KEYCLOAK_USER_PERSIST,
+//                method,
+//                new HttpEntity<>(userDto),
+//                String.class
+//        ));
+        logger.info("Event has successfully published ...");
+
+        return response;
+    }
+
     public void saveDocument(Document docs) {
         HttpMethod method = HttpMethod.POST;
         restTemplate.exchange(
@@ -135,6 +183,16 @@ public class ClaimRequestClient {
 
     public String getDocument(String osid) {
         UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(claimRequestUrl + DIGI_LOCKER_GET+osid);
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("accept", "*/*");
+        ResponseEntity<String> response = restTemplate.exchange(
+                builder.toUriString(), HttpMethod.GET, null, String.class, headers
+        );        logger.info("end getDocument ...");
+        return response.getBody();
+    }
+
+    public String getOsIdWithURI(String uri) {
+        UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(claimRequestUrl + DIGI_LOCKER_GET_OSID+uri);
         HttpHeaders headers = new HttpHeaders();
         headers.set("accept", "*/*");
         ResponseEntity<String> response = restTemplate.exchange(

@@ -84,17 +84,17 @@ public class DigiLockerUtils {
         Element docDetailsElement = (Element) rootElement.getElementsByTagName("DocDetails").item(0);
         // Get the values of URI and DigiLockerId elements
         String uri = docDetailsElement.getElementsByTagName("URI").item(0).getTextContent();
-        String name = docDetailsElement.getElementsByTagName("FullName").item(0).getTextContent();
-        String dob = docDetailsElement.getElementsByTagName("DOB").item(0).getTextContent();
-        String email = docDetailsElement.getElementsByTagName("email").item(0).getTextContent();
-        String finalYearRollNo = docDetailsElement.getElementsByTagName("finalYearRollNo").item(0).getTextContent();
+        //String name = docDetailsElement.getElementsByTagName("FullName").item(0).getTextContent();
+       // String dob = docDetailsElement.getElementsByTagName("DOB").item(0).getTextContent();
+       // String email = docDetailsElement.getElementsByTagName("email").item(0).getTextContent();
+       // String finalYearRollNo = docDetailsElement.getElementsByTagName("finalYearRollNo").item(0).getTextContent();
         String digiLockerId = docDetailsElement.getElementsByTagName("DigiLockerId").item(0).getTextContent();
         docDetails.setUri(uri);
         docDetails.setDigiLockerId(digiLockerId);
-        docDetails.setDob(dob);
-        docDetails.setFullName(name);
-        docDetails.setEmail(email);
-        docDetails.setFinalYearRollNo(finalYearRollNo);
+//        docDetails.setDob(dob);
+//        docDetails.setFullName(name);
+//        docDetails.setEmail(email);
+//        docDetails.setFinalYearRollNo(finalYearRollNo);
         request.setDocDetails(docDetails);
 
         // Print the values
@@ -287,12 +287,12 @@ public class DigiLockerUtils {
         ResponseUriStatus responseStatus = new ResponseUriStatus();
         responseStatus.setStatus(status);
         responseStatus.setTxn(txn);
-        byte[] bytes = convertObtToByte(certificate);
+        //byte[] bytes = convertObtToByte(certificate);
         responseStatus.setTs(DateUtil.getTimeStamp());
         DocDetails details = new DocDetails();
         IssuedTo issuedTo = new IssuedTo();
         issuedTo.setPersons(persons);
-        Object docContent = Base64.getEncoder().encodeToString(bytes);
+        Object docContent = certificate;
 
         details.setDocContent(docContent);
         details.setDataContent(convertJaxbToBase64XmlString(person));
@@ -356,25 +356,12 @@ public class DigiLockerUtils {
     }
 
 
-    public static JsonNode getQuryNode(String name,String dateOfBirth, String email, String finalYearRollNumber){
-       String formattedDateString =  formatDate(dateOfBirth);
+    public static JsonNode getQuryNode(String osid){
 
-        String q1 = "{\n" +
+        String query = "{\n" +
                 "    \"filters\": {\n" +
-                "        \"email\": {\n" +
-                "            \"contains\": \"" +email+
-                "\"\n" +
-                "        },\n" +
-                "        \"dateOfBirth\": {\n" +
-                "            \"eq\": \"" +formattedDateString+
-                "\"\n" +
-                "        },\n" +
-                "        \"name\": {\n" +
-                "            \"eq\": \"" +name+
-                "\"\n" +
-                "        },\n" +
-                "        \"finalYearRollNo\": {\n" +
-                "            \"eq\": \"" +finalYearRollNumber+
+                "        \"osid\": {\n" +
+                "            \"eq\": \"" + osid +
                 "\"\n" +
                 "        }\n" +
                 "    },\n" +
@@ -386,7 +373,7 @@ public class DigiLockerUtils {
         JsonFactory factory = mapper.getFactory();
         JsonNode actualObj = null;
         try {
-            JsonParser parser = factory.createParser(q1);
+            JsonParser parser = factory.createParser(query);
             actualObj = mapper.readTree(parser);
             // ((ObjectNode) actualObj.get("filters")).put("email",email);
         } catch (IOException e) {
@@ -413,11 +400,11 @@ public class DigiLockerUtils {
         resp.setDocDetails(docDetails);
         return resp;
     }
-    public static String convertJaxbToString(Object jaxbObject) {
+    public static String convertJaxbToString(PullURIResponse jaxbObject) {
         try {
-            JAXBContext jaxbContext = JAXBContext.newInstance(jaxbObject.getClass());
+            JAXBContext jaxbContext = JAXBContext.newInstance(PullURIResponse.class);
             Marshaller marshaller = jaxbContext.createMarshaller();
-            marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
+            //marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
             StringWriter writer = new StringWriter();
             marshaller.marshal(jaxbObject, writer);
             String objString = writer.toString();
@@ -428,11 +415,12 @@ public class DigiLockerUtils {
         }
     }
 
-    public static Object convertJaxbToPullDoc(PullDocResponse jaxbObject) {
+
+    public static String convertJaxbToPullDoc(PullDocResponse jaxbObject) {
         try {
             StringWriter writer = new StringWriter();
             JAXB.marshal(jaxbObject, writer);
-            Object objString = writer.toString();
+            String objString = writer.toString();
             return objString;
         } catch (Exception e) {
             e.printStackTrace();

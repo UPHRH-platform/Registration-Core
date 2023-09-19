@@ -17,6 +17,7 @@ import dev.sunbirdrc.registry.util.IDefinitionsManager;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -36,6 +37,7 @@ public class RegistryClaimsController extends AbstractController{
     private static final Logger logger = LoggerFactory.getLogger(RegistryClaimsController.class);
     private final ClaimRequestClient claimRequestClient;
     private final RegistryHelper registryHelper;
+
 
     public RegistryClaimsController(ClaimRequestClient claimRequestClient,
                                     RegistryHelper registryHelper,
@@ -60,29 +62,53 @@ public class RegistryClaimsController extends AbstractController{
         }
     }
 
+    @RequestMapping(value = "/api/v1/{entityName}/{entityType}/claims", method = RequestMethod.GET)
+    public ResponseEntity<Object> getAllClaimsByEntityType(@PathVariable String entityName,@PathVariable String entityType, Pageable pageable,
+                                               HttpServletRequest request) {
+        try {
+            JsonNode result = registryHelper.getRequestedUserDetails(request, entityName);
+            JsonNode claims = claimRequestClient.getClaims(result.get(entityName).get(0), pageable, entityName, entityType);
+            logger.info("Received {} claims", claims.size());
+            return new ResponseEntity<>(claims, HttpStatus.OK);
+        } catch (Exception e) {
+            logger.error("Fetching claims failed {}", e.getMessage());
+            e.printStackTrace();
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
 
     @RequestMapping(value = "/api/v2/{entityName}/claims", method = RequestMethod.GET)
-    public ResponseEntity<Object> getStudentsClaims(@PathVariable String entityName, Pageable pageable,
-                                               HttpServletRequest request) {
+    public ResponseEntity<Object> getStudentsClaims(@PathVariable String entityName, @RequestParam(value = "email", required = false) String email, HttpServletRequest request, Pageable pageable) {
         List<String> entityList = CommonUtils.getEntityName();
         ResponseEntity<Object> objectResponseEntity = null;
-        List list = new ArrayList();
         JsonNode claims = null;
         try {
-            for (String entityName1:entityList) {
-                JsonNode result = registryHelper.getRequestedUserDetails(request, entityName1);
-                if(result!=null) {
-                    JsonNode jsonNode = result.get(entityName1);
-                    if(jsonNode!=null && jsonNode.size()>0) {
-                        JsonNode email = jsonNode.get(0).get("email");
-                        if(email!=null) {
-                            claims = claimRequestClient.getStudentsClaims(email, pageable, entityName1);
-                            break;
-                        }
-                        logger.info("Received {} claims", claims.size());
-                    }
-                }
-            }
+//            for (String entityName1:entityList) {
+//                logger.info("entityName1::"+entityName1);
+//                JsonNode result = registryHelper.getRequestedUserDetails(request, entityName1);
+ //               if(result!=null) {
+//                    logger.info("result is not null..");
+                    //JsonNode jsonNode = result.get(entityName1);
+//                    if(jsonNode!=null && jsonNode.size()>0) {
+//                        JsonNode email = jsonNode.get(0).get("email");
+//                        if(email != null) {
+//                            logger.info("Email From Claim:"+email);
+                            claims = claimRequestClient.getStudentsClaims(email, pageable);
+ //                           break;
+//                        }else{
+//                            logger.info("email {} is null", email);
+//                            //claims = new
+//                        }
+//                        if(claims!=null)
+//                          logger.info("Received {} claims", claims.size());
+//                    }else{
+//                        logger.info("JSON Node is null");
+//                    }
+//                }else{
+//                    logger.info("result is null..");
+//                }
+//            }
             objectResponseEntity = new ResponseEntity<>(claims, HttpStatus.OK);
         } catch (Exception e) {
             logger.error("Fetching claims failed {}", e.getMessage());
@@ -111,7 +137,7 @@ public class RegistryClaimsController extends AbstractController{
         }
     }
 
-    @RequestMapping(value = "/api/v1/{entityName}/claims/{claimId}/attest", method = RequestMethod.POST)
+    @RequestMapping(value = "/api/v2/{entityName}/claims/{claimId}/attest", method = RequestMethod.POST)
     public ResponseEntity<Object> attestClaim(
             @PathVariable String claimId,
             @PathVariable String entityName,
@@ -133,6 +159,45 @@ public class RegistryClaimsController extends AbstractController{
 
             responseParams.setStatus(Response.Status.SUCCESSFUL);
             return new ResponseEntity<>(responseParams, HttpStatus.OK);
+        } catch (Exception exception) {
+            logger.error("Exception : {}", exception.getMessage());
+            responseParams.setStatus(Response.Status.UNSUCCESSFUL);
+            responseParams.setErrmsg(exception.getMessage());
+            return new ResponseEntity<>(responseParams, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @RequestMapping(value = "/api/v1/{entityName}/claims/{claimId}/attest", method = RequestMethod.POST)
+    public ResponseEntity<Object> attestClaimWithPrecheck(
+            @PathVariable String claimId,
+            @PathVariable String entityName,
+            @RequestBody ObjectNode requestBody,
+            HttpServletRequest request) {
+        ResponseParams responseParams = new ResponseParams();
+        try {
+            logger.info("Attesting claim {} as  {}", claimId, entityName);
+            JsonNode result = registryHelper.getRequestedUserDetails(request, entityName);
+            JsonNode claim = claimRequestClient.getClaimOptional(result.get(entityName).get(0), entityName, claimId);
+            JsonNode action = requestBody.get("action");
+            ObjectNode additionalInputs = generateAdditionInput(claimId, entityName, requestBody, request, action);
+            String attestorCouncil = additionalInputs.get("attestorInfo").get("council").asText();
+            boolean conditionCheck = claim.get("claim").get("conditions").asText().contains(attestorCouncil);
+            if(conditionCheck) {
+                final String attestorPlugin = "did:internal:ClaimPluginActor";
+                PluginRequestMessage pluginRequestMessage = PluginRequestMessage.builder().build();
+                pluginRequestMessage.setAttestorPlugin(attestorPlugin);
+                pluginRequestMessage.setAdditionalInputs(additionalInputs);
+                pluginRequestMessage.setStatus(action.asText());
+                pluginRequestMessage.setUserId(registryHelper.getKeycloakUserId(request));
+                PluginRouter.route(pluginRequestMessage);
+                responseParams.setStatus(Response.Status.SUCCESSFUL);
+                return new ResponseEntity<>(responseParams, HttpStatus.OK);
+            }
+            else{
+                responseParams.setStatus(Response.Status.UNSUCCESSFUL);
+                responseParams.setErrmsg("Requestor and Approver council is not same");
+                return new ResponseEntity<>(responseParams, HttpStatus.BAD_REQUEST);
+            }
         } catch (Exception exception) {
             logger.error("Exception : {}", exception.getMessage());
             responseParams.setStatus(Response.Status.UNSUCCESSFUL);
